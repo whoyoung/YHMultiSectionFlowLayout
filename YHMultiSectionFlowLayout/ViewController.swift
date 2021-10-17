@@ -26,11 +26,12 @@ class ViewController: UIViewController {
         return collectionView
     }()
     
-    private lazy var datas: [String] = {
-        var ds: [String] = []
+    private lazy var datas: [[String]] = {
+        var d: [String] = []
         for i in 0..<20 {
-            ds.append("\(i)")
+            d.append("\(i)")
         }
+        var ds = [["0", "1"], d]
         return ds
     }()
 
@@ -39,26 +40,35 @@ class ViewController: UIViewController {
         
         view.addSubview(collectionView)
         collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: kContentCellID)
-        
     }
-
 }
 
 extension ViewController: UICollectionViewDataSource {
-    public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
         return datas.count
+    }
+    
+    public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        if section < datas.count {
+            return datas[section].count
+        }
+        return 0
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: kContentCellID, for: indexPath)
         
         cell.backgroundColor = UIColor.randomColor()
+        if indexPath.section >= datas.count {
+            return cell
+        }
+        let d = datas[indexPath.section]
         if let label = cell.viewWithTag(101) as? UILabel {
-            label.text = datas[indexPath.item]
+            label.text = d[indexPath.item]
             label.frame = CGRect(x: 0, y: 0, width: 100, height: 44)
         } else {
             let label = UILabel()
-            label.text = datas[indexPath.item]
+            label.text = d[indexPath.item]
             label.textColor = UIColor.black
             label.tag = 101
             cell.contentView.addSubview(label)
@@ -66,6 +76,26 @@ extension ViewController: UICollectionViewDataSource {
         }
         return cell
     }
+    
+//    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+//        if kind == UICollectionView.elementKindSectionHeader {
+//            let header = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: "SectionHeader", for: indexPath)
+//            header.backgroundColor = UIColor.green
+//            if let label = header.viewWithTag(101) as? UILabel {
+//                label.text = " Section \(indexPath.section)"
+//            } else {
+//                let label = UILabel()
+//                label.textColor = UIColor.black
+//                label.tag = 101
+//                header.addSubview(label)
+//                label.frame = CGRect(x: 0, y: 0, width: collectionView.frame.width - collectionView.contentInset.left - collectionView.contentInset.right, height: 44)
+//                label.text = " Section \(indexPath.section)"
+//            }
+//            return header
+//        } else {
+//            return UICollectionReusableView()
+//        }
+//    }
 }
 
 extension ViewController: YHFlowLayoutDataSource {
@@ -73,7 +103,10 @@ extension ViewController: YHFlowLayoutDataSource {
         return CGFloat(arc4random_uniform(150) + 100)
     }
     
-    internal func numberOfColumnsInFlowLayout(_ layout: YHFlowLayout) -> Int{
+    internal func numberOfColumnsInFlowLayout(_ layout: YHFlowLayout, section: Int) -> Int {
+        if section == 0 {
+            return 1
+        }
         return 2
     }
 }
@@ -90,6 +123,16 @@ extension ViewController: UICollectionViewDelegate {
 //            }
         }
     }
+}
+
+extension ViewController: UICollectionViewDelegateFlowLayout {
+//    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
+//        return CGSize(width: 300, height: 44)
+//    }
+//    
+//    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForFooterInSection section: Int) -> CGSize {
+//        return CGSize(width: 0, height: 0)
+//    }
 }
 
 extension UIColor {
