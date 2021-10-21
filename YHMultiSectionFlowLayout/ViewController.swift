@@ -17,7 +17,6 @@ class ViewController: UIViewController {
         layout.sectionInset = UIEdgeInsets(top: 0, left: 10, bottom: 10, right: 10)
         layout.minimumInteritemSpacing = 10
         layout.minimumLineSpacing = 10
-        layout.dataSource = self
         
         let collectionView = UICollectionView(frame: self.view.bounds, collectionViewLayout: layout)
         collectionView.dataSource = self
@@ -79,20 +78,7 @@ extension ViewController: UICollectionViewDataSource {
     }
 }
 
-extension ViewController: YHFlowLayoutDataSource {
-    public func flowLayoutHeight(_ layout: YHFlowLayout, indexPath: IndexPath) -> CGFloat {
-        return CGFloat(arc4random_uniform(150) + 100)
-    }
-    
-    internal func numberOfColumnsInFlowLayout(_ layout: YHFlowLayout, section: Int) -> Int {
-        if section == 0 {
-            return 1
-        }
-        return 2
-    }
-}
-
-extension ViewController: UICollectionViewDelegate {
+extension ViewController: YHCollectionViewDelegateFlowLayout {
     public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
         if indexPath.item == datas[1].count - 1 {
             DispatchQueue.main.async {
@@ -105,10 +91,6 @@ extension ViewController: UICollectionViewDelegate {
                 self.collectionView.reloadData()
             }
         }
-    }
-    
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        debugPrint("scrollViewDidScroll offset = \(scrollView.contentOffset.y)")
     }
     
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
@@ -129,7 +111,17 @@ extension ViewController: UICollectionViewDelegate {
             }
 
         }
-
+    }
+    
+    public func flowLayoutHeight(_ layout: YHFlowLayout, indexPath: IndexPath) -> CGFloat {
+        return CGFloat(arc4random_uniform(150) + 100)
+    }
+    
+    internal func numberOfColumnsInFlowLayout(_ layout: YHFlowLayout, section: Int) -> Int {
+        if section == 0 {
+            return 1
+        }
+        return 2
     }
 }
 

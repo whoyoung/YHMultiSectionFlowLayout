@@ -1,27 +1,34 @@
 //
 //  YHFlowLayout.swift
-//  瀑布流
+//  流式布局
 //
 //
 
 import UIKit
 
-/// 瀑布流代理
-@objc public protocol YHFlowLayoutDataSource: AnyObject {
+/// 流式布局代理
+public protocol YHCollectionViewDelegateFlowLayout: UICollectionViewDelegateFlowLayout {
     /// ITEM 高度
     func flowLayoutHeight(_ layout: YHFlowLayout, indexPath: IndexPath) -> CGFloat
     
-    /// 瀑布流列数，默认2列
+    /// 流式布局列数，默认2列
     /// - Parameter layout: 布局
     /// - Returns: 列数
-    @objc optional func numberOfColumnsInFlowLayout(_ layout: YHFlowLayout, section: Int) -> Int
+    func numberOfColumnsInFlowLayout(_ layout: YHFlowLayout, section: Int) -> Int
     
 }
 
-public class YHFlowLayout: UICollectionViewFlowLayout {
+extension YHCollectionViewDelegateFlowLayout {
+    func flowLayoutHeight(_ layout: YHFlowLayout, indexPath: IndexPath) -> CGFloat {
+        return 0.1
+    }
     
-    /// 瀑布流数据源代理
-    public weak var dataSource: YHFlowLayoutDataSource?
+    func numberOfColumnsInFlowLayout(_ layout: YHFlowLayout, section: Int) -> Int {
+        return 2
+    }
+}
+
+public class YHFlowLayout: UICollectionViewFlowLayout {
     
     /// 布局属性数组
     private lazy var attrsArray: [UICollectionViewLayoutAttributes] = []
@@ -45,12 +52,17 @@ extension YHFlowLayout {
         super.prepare()
         guard let collectionView = collectionView else { return }
         let sectionCount = collectionView.numberOfSections
+        var columns = 2
+        guard let lay = collectionView.delegate as? YHCollectionViewDelegateFlowLayout else {
+            fatalError("请设置 collectionView.delegate, 并实现 YHCollectionViewDelegateFlowLayout 协议")
+        }
+        
         if columnHeights.isEmpty {
             var top = CGFloat(0.0)
             for i in 0..<sectionCount {
                 top += self.sectionInset.top
-                let columns = self.dataSource?.numberOfColumnsInFlowLayout?(self, section: i) ?? 2
-
+                columns = lay.numberOfColumnsInFlowLayout(self, section: i)
+                
                 columnHeights[i] = Array(repeating: top, count: columns)
                 existedNum[i] = 0
                 maxH[i] = top
@@ -61,11 +73,11 @@ extension YHFlowLayout {
         for index in 0..<sectionCount {
             let itemCount = collectionView.numberOfItems(inSection: index)
             
-            let cols = dataSource?.numberOfColumnsInFlowLayout?(self, section: index) ?? 2
+            columns = lay.numberOfColumnsInFlowLayout(self, section: index)
             
             let drawW = collectionView.bounds.width - self.sectionInset.left - self.sectionInset.right
             // Item宽度
-            let itemW = (drawW - self.minimumInteritemSpacing * CGFloat(cols - 1)) / CGFloat(cols)
+            let itemW = (drawW - self.minimumInteritemSpacing * CGFloat(columns - 1)) / CGFloat(columns)
             
             if index > 0 {
                 previousSectionH = maxH[index - 1] ?? CGFloat(0.0)
@@ -77,13 +89,9 @@ extension YHFlowLayout {
             for i in existed..<itemCount {
                 let indexPath = IndexPath(item: i, section: index)
                 let attrs = UICollectionViewLayoutAttributes(forCellWith: indexPath)
-                
-                // 获取CELL的高度
-                guard let height = dataSource?.flowLayoutHeight(self, indexPath: indexPath) else {
-                    fatalError("请设置数据源,并且实现对应的数据源方法")
-                }
-                
-                var destColumn = i % cols
+
+                let height = lay.flowLayoutHeight(self, indexPath: indexPath)
+                var destColumn = i % columns
                 var minHeight = heights[destColumn]
                 if smartSort {
                     for idx in 0..<heights.count {
