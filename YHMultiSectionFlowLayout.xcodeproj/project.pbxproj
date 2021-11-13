@@ -42,6 +42,7 @@
 		6FF92327271AF70B004EEB3D = {
 			isa = PBXGroup;
 			children = (
+				77285FF927401ACF004563C5 /* Classes */,
 				6FF92332271AF70B004EEB3D /* YHMultiSectionFlowLayout */,
 				6FF92331271AF70B004EEB3D /* Products */,
 			);
@@ -58,7 +59,6 @@
 		6FF92332271AF70B004EEB3D /* YHMultiSectionFlowLayout */ = {
 			isa = PBXGroup;
 			children = (
-				6FA5C8C0271B0A720051D9B6 /* YHFlowLayout.swift */,
 				6FF92333271AF70B004EEB3D /* AppDelegate.swift */,
 				6FF92335271AF70B004EEB3D /* SceneDelegate.swift */,
 				6FF92337271AF70B004EEB3D /* ViewController.swift */,
@@ -68,6 +68,14 @@
 				6FF92341271AF721004EEB3D /* Info.plist */,
 			);
 			path = YHMultiSectionFlowLayout;
+			sourceTree = "<group>";
+		};
+		77285FF927401ACF004563C5 /* Classes */ = {
+			isa = PBXGroup;
+			children = (
+				6FA5C8C0271B0A720051D9B6 /* YHFlowLayout.swift */,
+			);
+			path = Classes;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
