@@ -2,29 +2,33 @@
 //  YHFlowLayout.swift
 //  流式布局
 //
-//
 
 import UIKit
 
 /// 流式布局代理
-public protocol YHCollectionViewDelegateFlowLayout: UICollectionViewDelegateFlowLayout {
+public protocol YHFlowLayoutDataSource: AnyObject {
     /// ITEM 高度
-    func flowLayoutHeight(_ layout: YHFlowLayout, indexPath: IndexPath) -> CGFloat
+    func flowLayoutHeight(_ collectionView: UICollectionView, layout: YHFlowLayout, indexPath: IndexPath) -> CGFloat
     
     /// 流式布局列数，默认2列
     /// - Parameter layout: 布局
     /// - Returns: 列数
-    func numberOfColumnsInFlowLayout(_ layout: YHFlowLayout, section: Int) -> Int
+    func numberOfColumnsInFlowLayout(_ collectionView: UICollectionView, layout: YHFlowLayout, section: Int) -> Int
     
+    func insetForSection(_ collectionView: UICollectionView, layout: YHFlowLayout, section: Int) -> UIEdgeInsets?
 }
 
-extension YHCollectionViewDelegateFlowLayout {
-    func flowLayoutHeight(_ layout: YHFlowLayout, indexPath: IndexPath) -> CGFloat {
+public extension YHFlowLayoutDataSource {
+    func flowLayoutHeight(_ collectionView: UICollectionView, layout: YHFlowLayout, indexPath: IndexPath) -> CGFloat {
         return 0.1
     }
     
-    func numberOfColumnsInFlowLayout(_ layout: YHFlowLayout, section: Int) -> Int {
+    func numberOfColumnsInFlowLayout(_ collectionView: UICollectionView, layout: YHFlowLayout, section: Int) -> Int {
         return 2
+    }
+    
+    func insetForSection(_ collectionView: UICollectionView, layout: YHFlowLayout, section: Int) -> UIEdgeInsets? {
+        return nil
     }
 }
 
@@ -44,6 +48,8 @@ public class YHFlowLayout: UICollectionViewFlowLayout {
     
     /// 每一个 section 中 item 的数目
     private var existedNum: [Int: Int] = [:]
+    
+    public weak var flowLayoutDataSource: YHFlowLayoutDataSource?
 }
 
 extension YHFlowLayout {
@@ -53,15 +59,16 @@ extension YHFlowLayout {
         guard let collectionView = collectionView else { return }
         let sectionCount = collectionView.numberOfSections
         var columns = 2
-        guard let lay = collectionView.delegate as? YHCollectionViewDelegateFlowLayout else {
-            fatalError("请设置 collectionView.delegate, 并实现 YHCollectionViewDelegateFlowLayout 协议")
+        guard let lay = flowLayoutDataSource else {
+            fatalError("请设置 flowLayoutDataSource, 并实现 YHFlowLayoutDataSource 协议")
         }
-        
         if columnHeights.isEmpty {
-            var top = CGFloat(0.0)
+            var top = self.sectionInset.top
             for i in 0..<sectionCount {
-                top += self.sectionInset.top
-                columns = lay.numberOfColumnsInFlowLayout(self, section: i)
+                if let inset = lay.insetForSection(collectionView, layout: self, section: i) {
+                    top = inset.top
+                }
+                columns = lay.numberOfColumnsInFlowLayout(collectionView, layout: self, section: i)
                 
                 columnHeights[i] = Array(repeating: top, count: columns)
                 existedNum[i] = 0
@@ -70,12 +77,15 @@ extension YHFlowLayout {
         }
         
         var previousSectionH = CGFloat(0)
+        var inset = self.sectionInset
         for index in 0..<sectionCount {
             let itemCount = collectionView.numberOfItems(inSection: index)
+            if let aInset = lay.insetForSection(collectionView, layout: self, section: index) {
+                inset = aInset
+            }
+            columns = lay.numberOfColumnsInFlowLayout(collectionView, layout: self, section: index)
             
-            columns = lay.numberOfColumnsInFlowLayout(self, section: index)
-            
-            let drawW = collectionView.bounds.width - self.sectionInset.left - self.sectionInset.right
+            let drawW = collectionView.bounds.width - inset.left - inset.right
             // Item宽度
             let itemW = (drawW - self.minimumInteritemSpacing * CGFloat(columns - 1)) / CGFloat(columns)
             
@@ -90,19 +100,21 @@ extension YHFlowLayout {
                 let indexPath = IndexPath(item: i, section: index)
                 let attrs = UICollectionViewLayoutAttributes(forCellWith: indexPath)
 
-                let height = lay.flowLayoutHeight(self, indexPath: indexPath)
+                let height = lay.flowLayoutHeight(collectionView, layout: self, indexPath: indexPath)
                 var destColumn = i % columns
                 var minHeight = heights[destColumn]
                 if smartSort {
+                    // swiftlint:disable for_where
                     for idx in 0..<heights.count {
                         if minHeight > heights[idx] {
                             minHeight = heights[idx]
                             destColumn = idx
                         }
                     }
+                    // swiftlint:enable for_where
                 }
                 
-                let x = self.sectionInset.left + (self.minimumInteritemSpacing + itemW) * CGFloat(destColumn)
+                let x = inset.left + (self.minimumInteritemSpacing + itemW) * CGFloat(destColumn)
      
                 // 设置item的属性
                 attrs.frame = CGRect(x: x, y: minHeight + previousSectionH, width: itemW, height: height)
@@ -147,6 +159,10 @@ extension YHFlowLayout {
             return CGSize.zero
         }
         let h = maxH[sectionCount - 1] ?? CGFloat(0)
-        return CGSize(width: 0, height: h + sectionInset.bottom - minimumLineSpacing)
+        var bottom = sectionInset.bottom
+        if let inset = flowLayoutDataSource?.insetForSection(collectionView, layout: self, section: sectionCount - 1) {
+            bottom = inset.bottom
+        }
+        return CGSize(width: 0, height: h + bottom - minimumLineSpacing)
     }
 }
