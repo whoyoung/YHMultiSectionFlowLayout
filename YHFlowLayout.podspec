@@ -16,7 +16,7 @@ Pod::Spec.new do |spec|
   #
 
   spec.name         = "YHFlowLayout"
-  spec.version      = "0.0.3"
+  spec.version      = "0.0.4"
   spec.summary      = "YHFlowLayout support UICollectionView waterfall flow layout and multiple section."
 
   spec.description  = <<-DESC
